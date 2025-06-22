@@ -6,6 +6,7 @@ async function sendMessage(senderId, message, pageAccessToken) {
     recipient: { id: senderId },
     message: message,
   });
+  console.log(`[BOT]: ${message.text}`);
 }
 
 module.exports = { sendMessage };

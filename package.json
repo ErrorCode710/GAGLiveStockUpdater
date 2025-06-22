@@ -4,6 +4,6 @@
     "ws": "^8.18.2"
   },
   "scripts": {
-    "start": "node gagstock.js"
+    "start": "node launcher.js"
   }
 }
