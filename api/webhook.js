@@ -3,10 +3,12 @@ const { sendMessage } = require("../handles/sendMessage");
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const mode = url.searchParams.get("hub.mode");
-    const token = url.searchParams.get("hub.verify_token");
-    const challenge = url.searchParams.get("hub.challenge");
+    const mode = req.query["hub.mode"];
+    const token = req.query["hub.verify_token"];
+    const challenge = req.query["hub.challenge"];
+
+    console.log("Facebook token:", token);
+    console.log("Server token:", process.env.VERIFY_TOKEN);
 
     if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
       res.statusCode = 200;
@@ -19,14 +21,13 @@ export default async function handler(req, res) {
     try {
       const body = req.body;
 
-      // Check if this is a page subscription
       if (body.object === "page") {
         for (const entry of body.entry) {
           for (const event of entry.messaging) {
             const senderId = event.sender.id;
             const message = event.message?.text;
 
-            if (!message) continue; // ignore non-text messages
+            if (!message) continue;
 
             const args = message.trim().split(" ");
             const command = args[0].toLowerCase();
@@ -34,7 +35,6 @@ export default async function handler(req, res) {
             if (command === "gagstock") {
               await gagstock.execute(senderId, args.slice(1), process.env.PAGE_ACCESS_TOKEN);
             } else {
-              // You can handle other commands here
               await sendMessage(senderId, { text: "❓ Unknown command." }, process.env.PAGE_ACCESS_TOKEN);
             }
           }
