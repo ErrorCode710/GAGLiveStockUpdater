@@ -1,11 +1,14 @@
+import { parse } from "url"; // built-in Node.js module
+
 const { gagstock } = require("../gagstock/gagstock");
 const { sendMessage } = require("../handles/sendMessage");
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    const mode = req.query["hub.mode"];
-    const token = req.query["hub.verify_token"];
-    const challenge = req.query["hub.challenge"];
+    const { query } = parse(req.url, true);
+    const mode = query["hub.mode"];
+    const token = query["hub.verify_token"];
+    const challenge = query["hub.challenge"];
 
     console.log("Facebook token:", token);
     console.log("Server token:", process.env.VERIFY_TOKEN);
