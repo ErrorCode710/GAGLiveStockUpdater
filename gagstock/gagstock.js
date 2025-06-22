@@ -175,7 +175,7 @@ module.exports = {
 
       ws.on("message", async (data) => {
         try {
-          console.log("WebSocket data received:", data.toString());
+          
           const dataTest = data.toString();
           await sendMessage(senderId, { text: `WebSocket data received:" ${dataTest})` }, pageAccessToken);
           const payload = JSON.parse(data);
