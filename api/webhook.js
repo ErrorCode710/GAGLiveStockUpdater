@@ -1,57 +1,60 @@
-import { parse } from "url"; // native Node module
+// index.js
 
-const gagstock = require("../gagstock/gagstock");
-const { sendMessage } = require("../handles/sendMessage");
+const express = require("express");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
-export default async function handler(req, res) {
-  if (req.method === "GET") {
-    const { query } = parse(req.url, true); // ✅ fixes `undefined` token
-    const mode = query["hub.mode"];
-    const token = query["hub.verify_token"];
-    const challenge = query["hub.challenge"];
+const gagstock = require("./gagstock/gagstock");
+const { sendMessage } = require("./handles/sendMessage");
 
-    console.log("Facebook token:", token);
-    console.log("Server token:", process.env.VERIFY_TOKEN);
+const app = express();
+app.use(bodyParser.json());
 
-    if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "text/plain");
-      res.end(challenge);
-    } else {
-      res.status(403).send("Verification failed");
-    }
-  } else if (req.method === "POST") {
-    try {
-      const body = req.body;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 
-      if (body.object === "page") {
-        for (const entry of body.entry) {
-          for (const event of entry.messaging) {
-            const senderId = event.sender.id;
-            const message = event.message?.text;
+// Webhook verification
+app.get("/api/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-            if (!message) continue;
-
-            const args = message.trim().split(" ");
-            const command = args[0].toLowerCase();
-
-            if (command === "gagstock") {
-              await gagstock.execute(senderId, args.slice(1), process.env.PAGE_ACCESS_TOKEN);
-            } else {
-              await sendMessage(senderId, { text: "❓ Unknown command." }, process.env.PAGE_ACCESS_TOKEN);
-            }
-          }
-        }
-
-        res.status(200).send("EVENT_RECEIVED");
-      } else {
-        res.status(404).send("Not a page object");
-      }
-    } catch (error) {
-      console.error("POST error:", error);
-      res.status(500).send("Server error");
-    }
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
   } else {
-    res.status(405).send("Method Not Allowed");
+    return res.status(403).send("Verification failed");
   }
-}
+});
+
+// Handle messages
+app.post("/api/webhook", async (req, res) => {
+  const body = req.body;
+
+  if (body.object === "page") {
+    for (const entry of body.entry) {
+      for (const event of entry.messaging) {
+        const senderId = event.sender.id;
+        const message = event.message?.text;
+        if (!message) continue;
+
+        const args = message.trim().split(" ");
+        const command = args[0].toLowerCase();
+
+        if (command === "gagstock") {
+          await gagstock.execute(senderId, args.slice(1), PAGE_ACCESS_TOKEN);
+        } else {
+          await sendMessage(senderId, { text: "❓ Unknown command." }, PAGE_ACCESS_TOKEN);
+        }
+      }
+    }
+
+    res.status(200).send("EVENT_RECEIVED");
+  } else {
+    res.sendStatus(404);
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+});
