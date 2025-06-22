@@ -165,6 +165,7 @@ module.exports = {
       ws = new WebSocket("wss://gagstock.gleeze.com");
 
       ws.on("open", () => {
+        console.log(`✅ WebSocket connected for ${senderId}`);
         keepAliveInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send("ping");
@@ -174,7 +175,7 @@ module.exports = {
 
       ws.on("message", async (data) => {
         try {
-            console.log("WebSocket data received:", data.toString());
+          console.log("WebSocket data received:", data.toString());
           const payload = JSON.parse(data);
           if (payload.status !== "success") return;
 
@@ -186,6 +187,7 @@ module.exports = {
             cosmeticsStock: backup.cosmetics.items.map((i) => ({ name: i.name, value: Number(i.quantity) })),
             honeyStock: backup.honey.items.map((i) => ({ name: i.name, value: Number(i.quantity) })),
           };
+          console.log("Parsed stock data:", JSON.stringify(stockData, null, 2));
 
           const currentKey = JSON.stringify({
             gearStock: stockData.gearStock,
@@ -198,7 +200,7 @@ module.exports = {
 
           const restocks = getNextRestocks();
           const formatList = (arr) => arr.map((i) => `- ${addEmoji(i.name)}: ${formatValue(i.value)}`).join("\n");
-          
+
           let filteredContent = "";
           let matched = 0;
 
@@ -241,7 +243,7 @@ module.exports = {
           const weatherInfo = weather
             ? `🌤️ 𝗪𝗲𝗮𝘁𝗵𝗲𝗿: ${weather.icon} ${weather.weatherType}\n📋 ${weather.description}\n🎯 ${weather.cropBonuses}\n`
             : "";
-
+          console.log("Weather info:", weatherInfo);
           const message = `🌾 𝗚𝗿𝗼𝘄 𝗔 𝗚𝗮𝗿𝗱𝗲𝗻 — 𝗧𝗿𝗮𝗰𝗸𝗲𝗿\n\n${filteredContent}${weatherInfo}📅 Updated at (PH): ${updatedAtPH}`;
 
           if (!activeSessions.has(senderId)) return;
