@@ -1,11 +1,11 @@
-import { parse } from "url"; // built-in Node.js module
+import { parse } from "url"; // native Node module
 
 const { gagstock } = require("../gagstock/gagstock");
 const { sendMessage } = require("../handles/sendMessage");
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    const { query } = parse(req.url, true);
+    const { query } = parse(req.url, true); // ✅ fixes `undefined` token
     const mode = query["hub.mode"];
     const token = query["hub.verify_token"];
     const challenge = query["hub.challenge"];
