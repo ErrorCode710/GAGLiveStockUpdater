@@ -250,9 +250,7 @@ module.exports = {
 
           if (!activeSessions.has(senderId)) return;
           await sendMessage(senderId, { text: message }, pageAccessToken);
-        } catch (e) {
-          await sendMessage(senderId, { text: `Error" ${e})` }, pageAccessToken);
-        }
+        } catch (e) {}
       });
 
       ws.on("close", () => {
