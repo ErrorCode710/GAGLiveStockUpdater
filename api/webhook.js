@@ -1,9 +1,5 @@
-// api/webhook.js
 const { gagstock } = require("../gagstock/gagstock");
 const { sendMessage } = require("../handles/sendMessage");
-
-const VERIFY_TOKEN = "your_verify_token";
-const PAGE_ACCESS_TOKEN = "your_page_access_token";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
@@ -16,12 +12,13 @@ export default async function handler(req, res) {
     console.log("Server token:", process.env.VERIFY_TOKEN);
 
     if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      return res.status(200).send(challenge);
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "text/plain");
+      res.end(challenge); // ✅ send raw challenge string
     } else {
-      return res.status(403).send("Verification failed");
+      res.status(403).send("Verification failed");
     }
+  } else {
+    res.status(405).send("Method Not Allowed");
   }
-
-  // Handle POST for real messages later
-  res.status(405).send("Method Not Allowed");
 }
