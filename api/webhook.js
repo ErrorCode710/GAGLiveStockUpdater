@@ -7,6 +7,12 @@ const PAGE_ACCESS_TOKEN = "your_page_access_token";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
+    const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+    console.log("Facebook token:", req.query["hub.verify_token"]);
+    console.log("Server token:", VERIFY_TOKEN);
+    // ...
+  }
+  if (req.method === "GET") {
     const mode = req.query["hub.mode"];
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
