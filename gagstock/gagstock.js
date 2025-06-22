@@ -177,7 +177,7 @@ module.exports = {
         try {
           
           const dataTest = data.toString();
-          await sendMessage(senderId, { text: `WebSocket data received:" ${dataTest})` }, pageAccessToken);
+          
           const payload = JSON.parse(data);
           if (payload.status !== "success") return;
 
