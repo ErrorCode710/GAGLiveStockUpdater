@@ -1,6 +1,6 @@
 // launcher.js
 
-const gagstock = require("./modules/gagstock");
+const gagstock = require("./gagstock/gagstock");
 
 // Dummy sendMessage function to simulate Messenger replies
 const sendMessage = async (senderId, message, token) => {
