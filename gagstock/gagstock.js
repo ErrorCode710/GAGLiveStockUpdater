@@ -174,6 +174,7 @@ module.exports = {
 
       ws.on("message", async (data) => {
         try {
+            console.log("WebSocket data received:", data.toString());
           const payload = JSON.parse(data);
           if (payload.status !== "success") return;
 
@@ -197,7 +198,7 @@ module.exports = {
 
           const restocks = getNextRestocks();
           const formatList = (arr) => arr.map((i) => `- ${addEmoji(i.name)}: ${formatValue(i.value)}`).join("\n");
-
+          
           let filteredContent = "";
           let matched = 0;
 
