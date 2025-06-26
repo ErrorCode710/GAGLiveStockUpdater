@@ -177,7 +177,6 @@ module.exports = {
   description: "Track Grow A Garden stock using WebSocket live updates.",
   usage: "gagstock on | gagstock on Sunflower | Watering Can | gagstock off",
   category: "Tools ⚒️",
-  execute,
   saveToken,
 
   async execute(senderId, args, pageAccessToken) {
