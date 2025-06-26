@@ -9,19 +9,34 @@ const PH_TIMEZONE = "Asia/Manila";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Required for Railway
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+});
+
+// Add connection test
+pool.on("error", (err) => {
+  console.error("PostgreSQL error:", err);
 });
 
 // Create tokens table (run once)
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS tokens (
-      user_id TEXT PRIMARY KEY,
-      expo_token TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  console.log("Database ready");
+async function initDB(retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await pool.query("SELECT NOW()"); // Simple test query
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tokens (
+          user_id TEXT PRIMARY KEY,
+          expo_token TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+      console.log("Database ready");
+      return;
+    } catch (err) {
+      console.error(`DB connection failed (attempt ${i + 1}):`, err);
+      if (i === retries - 1) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
 }
 initDB();
 async function getToken(userId) {
