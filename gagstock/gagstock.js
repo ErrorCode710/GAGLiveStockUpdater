@@ -17,6 +17,21 @@ pool.on("error", (err) => {
   console.error("PostgreSQL error:", err);
 });
 
+app.post("/register-token", async (req, res) => {
+  const { userId, token } = req.body;
+
+  if (!userId || !token?.startsWith("ExponentPushToken[")) {
+    return res.status(400).json({ error: "Invalid token or missing userId" });
+  }
+
+  try {
+    await saveToken(userId, token);
+    return res.status(200).json({ message: "✅ Token saved" });
+  } catch (err) {
+    console.error("Token save failed:", err);
+    return res.status(500).json({ error: "❌ Failed to save token" });
+  }
+});
 // Create tokens table (run once)
 async function initDB() {
   console.log("Connecting to DB at:", process.env.DATABASE_URL);
