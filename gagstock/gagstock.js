@@ -1,10 +1,59 @@
 const { sendMessage } = require("../handles/sendMessage");
 const WebSocket = require("ws");
 const axios = require("axios");
+const { Pool } = require("pg");
 
 const activeSessions = new Map();
 const lastSentCache = new Map();
 const PH_TIMEZONE = "Asia/Manila";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // Required for Railway
+});
+
+// Create tokens table (run once)
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tokens (
+      user_id TEXT PRIMARY KEY,
+      expo_token TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  console.log("Database ready");
+}
+initDB();
+async function getToken(userId) {
+  const res = await pool.query("SELECT expo_token FROM tokens WHERE user_id = $1", [userId]);
+  return res.rows[0]?.expo_token;
+}
+
+async function saveToken(userId, token) {
+  await pool.query(
+    `
+    INSERT INTO tokens (user_id, expo_token)
+    VALUES ($1, $2)
+    ON CONFLICT (user_id) 
+    DO UPDATE SET expo_token = $2, created_at = NOW()
+  `,
+    [userId, token]
+  );
+}
+
+// For My App
+async function sendExpoPushNotification(token, message) {
+  try {
+    await axios.post("https://exp.host/--/api/v2/push/send", {
+      to: token,
+      title: "🌱 GAG Stock Update",
+      body: message,
+      sound: "default",
+    });
+  } catch (err) {
+    console.error("Failed to send Expo push notification:", err);
+  }
+}
 
 function pad(n) {
   return n < 10 ? "0" + n : n;
@@ -115,6 +164,25 @@ module.exports = {
 
   async execute(senderId, args, pageAccessToken) {
     const action = args[0]?.toLowerCase();
+
+    if (action === "register-token") {
+      const token = args[1];
+      if (!token?.startsWith("ExponentPushToken[")) {
+        return await sendMessage(
+          senderId,
+          { text: "⚠️ Invalid token format! Get a new one from the app." },
+          pageAccessToken
+        );
+      }
+      try {
+        await saveToken(senderId, token);
+        return await sendMessage(senderId, { text: "✅ Token saved! You'll get app notifications." }, pageAccessToken);
+      } catch (err) {
+        console.error("Database save failed:", err);
+        return await sendMessage(senderId, { text: "⚠️ Failed to save token. Try again later." }, pageAccessToken);
+      }
+    }
+
     const filters = args
       .slice(1)
       .join(" ")
@@ -175,9 +243,8 @@ module.exports = {
 
       ws.on("message", async (data) => {
         try {
-          
           const dataTest = data.toString();
-          
+
           const payload = JSON.parse(data);
           if (payload.status !== "success") return;
 
@@ -199,6 +266,12 @@ module.exports = {
           const lastSent = lastSentCache.get(senderId);
           if (lastSent === currentKey) return;
           lastSentCache.set(senderId, currentKey);
+
+          // For My app push
+          const expoToken = await getToken(senderId);
+          if (expoToken) {
+            await sendExpoPushNotification(expoToken, "New GAG stock update! Check your app.");
+          }
 
           const restocks = getNextRestocks();
           const formatList = (arr) => arr.map((i) => `- ${addEmoji(i.name)}: ${formatValue(i.value)}`).join("\n");
