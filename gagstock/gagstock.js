@@ -18,24 +18,25 @@ pool.on("error", (err) => {
 });
 
 // Create tokens table (run once)
-async function initDB(retries = 5) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      await pool.query("SELECT NOW()"); // Simple test query
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS tokens (
-          user_id TEXT PRIMARY KEY,
-          expo_token TEXT NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-      `);
-      console.log("Database ready");
-      return;
-    } catch (err) {
-      console.error(`DB connection failed (attempt ${i + 1}):`, err);
-      if (i === retries - 1) throw err;
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
+async function initDB() {
+  console.log("Connecting to DB at:", process.env.DATABASE_URL);
+  try {
+    await pool.query("SELECT NOW()");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tokens (
+        user_id TEXT PRIMARY KEY,
+        expo_token TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log("✅ Database ready");
+  } catch (err) {
+    console.error("❌ DB Connection failed:", {
+      error: err.message,
+      connectionString: process.env.DATABASE_URL,
+      host: new URL(process.env.DATABASE_URL).hostname,
+    });
+    throw err;
   }
 }
 initDB();
