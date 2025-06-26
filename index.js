@@ -26,7 +26,7 @@ app.post("/register-token", async (req, res) => {
     return res.status(200).json({ message: "✅ Token saved" });
   } catch (err) {
     console.error("Token save failed:", err);
-    return res.status(500).json({ error: "❌ Failed to save token" });
+    return res.status(500).json({ error: "❌ Failed to save token." });
   }
 });
 
