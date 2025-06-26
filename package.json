@@ -7,8 +7,6 @@
     "ws": "^8.18.2"
   },
   "scripts": {
-    "start": "node index.js",
-    "migrate": "node create-tables.js",
-  "prestart": "npm run migrate"
+    "start": "node index.js"
   }
 }
