@@ -296,6 +296,7 @@ module.exports = {
 
           const allTokens = await getAllTokens();
           for (const token of allTokens) {
+            console.log(token);
             await sendExpoPushNotification(token, "New GAG stock update!");
           }
 
