@@ -40,10 +40,15 @@ async function initDB() {
   }
 }
 initDB();
+
 async function getToken(userId) {
   console.log(" ✅userId", userId);
   const res = await pool.query("SELECT expo_token FROM tokens WHERE user_id = $1", [userId]);
   return res.rows[0]?.expo_token;
+}
+async function getAllTokens() {
+  const res = await pool.query("SELECT expo_token FROM tokens");
+  return res.rows.map((row) => row.expo_token);
 }
 
 async function Token(userId, token) {
@@ -289,9 +294,9 @@ module.exports = {
           console.log(" ✅senderId", senderId);
           // For My app push
 
-          const expoToken = await getToken(senderId);
-          if (expoToken) {
-            await sendExpoPushNotification(expoToken, "New GAG stock update! Check your app. {}", getPHTime());
+          const allTokens = await getAllTokens();
+          for (const token of allTokens) {
+            await sendExpoPushNotification(token, "New GAG stock update!");
           }
 
           const restocks = getNextRestocks();
